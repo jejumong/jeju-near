@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>가까이 제주</title>
+<style>
+:root{--sea:#0f5e6b;--sea2:#13798a;--tang:#f08a24;--bg:#f6f4ef;--card:#fff;--ink:#1d2a2e;--sub:#62716f;--line:#e4e0d6;--chip:#e8f0f0;--bus:#2a6fdb}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:var(--sea);color:#fff;padding:14px 16px 0;position:sticky;top:0;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.top{display:flex;align-items:center;gap:8px;max-width:640px;margin:0 auto}
+h1{font-size:19px;margin:0;flex:1;letter-spacing:-.3px}
+h1 small{font-size:12px;font-weight:500;opacity:.75;margin-left:4px}
+.iconbtn{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:10px;padding:7px 11px;font-size:15px;cursor:pointer}
+.loc{max-width:640px;margin:8px auto 0;font-size:13px;display:flex;align-items:center;gap:6px;opacity:.95}
+.loc span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loc button{background:none;border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:8px;font-size:12px;padding:3px 9px;cursor:pointer}
+nav{display:flex;max-width:640px;margin:10px auto 0}
+nav button{flex:1;background:none;border:0;color:rgba(255,255,255,.68);padding:10px 2px 12px;font-size:14px;font-weight:700;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav button.on{color:#fff;border-bottom-color:var(--tang)}
+main{max-width:640px;margin:0 auto;padding:14px 16px 48px}
+.search{display:flex;gap:8px}
+.search input{flex:1;min-width:0;font-size:16px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fff;outline:none;color:var(--ink)}
+.search input:focus{border-color:var(--sea2)}
+.search button{background:var(--tang);color:#fff;border:0;border-radius:12px;padding:0 18px;font-size:15px;font-weight:700;cursor:pointer}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{background:var(--chip);border:0;border-radius:999px;padding:7px 12px;font-size:13px;color:var(--sea);cursor:pointer;font-weight:600}
+.chip.on{background:var(--sea);color:#fff}
+.seg{display:flex;gap:4px;margin-top:10px;background:#ebe7dd;border-radius:10px;padding:3px;width:max-content}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:8px;font-size:13px;color:var(--sub);cursor:pointer;font-weight:600}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+#map{height:240px;border-radius:14px;margin:14px 0 4px;overflow:hidden;display:none;border:1px solid var(--line)}
+.notice{background:#fff7ec;border:1px solid #f6d6b0;color:#7a4a12;border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.55;margin-top:12px}
+.notice button{margin-top:8px;background:var(--tang);color:#fff;border:0;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer}
+.empty,.loading{text-align:center;color:var(--sub);padding:34px 10px;font-size:14px;line-height:1.6}
+.loading:before{content:"";display:block;width:26px;height:26px;margin:0 auto 10px;border:3px solid var(--chip);border-top-color:var(--sea2);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rhead{font-size:13px;color:var(--sub);margin:16px 2px 4px}
+.card{background:var(--card);border-radius:14px;padding:14px;margin-top:10px;border:1px solid var(--line)}
+.prow{display:flex;gap:10px;cursor:pointer}
+.num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--sea);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.pmain{flex:1;min-width:0}
+.pname{font-size:16px;font-weight:700;letter-spacing:-.2px}
+.pick{background:var(--tang);color:#fff;font-size:11px;border-radius:6px;padding:2px 6px;margin-right:6px;vertical-align:2px}
+.pmeta{font-size:13px;color:var(--sub);margin-top:3px}
+.pmeta b{color:var(--sea);}
+.paddr{font-size:13px;color:var(--sub);margin-top:2px}
+.pbtns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.pbtns a{text-decoration:none;font-size:13px;color:var(--sea);background:var(--chip);border-radius:8px;padding:6px 10px;font-weight:600}
+.cands{font-size:13px;color:var(--sub);margin-top:14px}
+.cands .chip{margin:4px 4px 0 0}
+.dlabel{font-size:12px;color:var(--tang);font-weight:700}
+.route .rtop{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.route .time{font-size:22px;font-weight:800;color:var(--sea)}
+.route .rinfo{font-size:13px;color:var(--sub)}
+.route .best{background:var(--sea);color:#fff;font-size:11px;border-radius:6px;padding:2px 7px}
+.route .sum{margin-top:8px;font-size:14px;line-height:1.5;background:#f3f7f7;border-radius:10px;padding:9px 11px}
+.route ol{list-style:none;margin:12px 0 0;padding:0 0 0 14px;border-left:2px dashed var(--line)}
+.route li{position:relative;margin:0 0 12px;font-size:14px;line-height:1.5}
+.route li:before{content:"";position:absolute;left:-21px;top:5px;width:12px;height:12px;border-radius:50%;background:#cfd6d6}
+.route li.ride:before{background:var(--bus)}
+.route li span.s{color:var(--sub);font-size:12.5px}
+.bus{display:inline-block;background:var(--bus);color:#fff;font-weight:800;border-radius:7px;padding:2px 9px;margin:0 4px 4px 0;font-size:14px}
+.mk{background:var(--sea);color:#fff;font-size:12px;font-weight:700;border-radius:12px;padding:3px 8px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);white-space:nowrap}
+.mk.dest{background:var(--tang)}
+.mk.stop{background:var(--bus)}
+.me{width:16px;height:16px;border-radius:50%;background:#2a7bf6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(42,123,246,.22)}
+footer{text-align:center;font-size:11.5px;color:var(--sub);margin-top:28px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.modal.on{display:flex}
+.sheet{background:#fff;width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:20px 18px 26px;max-height:90vh;overflow:auto}
+.sheet h2{margin:0 0 6px;font-size:18px}
+.sheet label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}
+.sheet input{width:100%;font-size:15px;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px}
+.sheet p{font-size:12.5px;color:var(--sub);line-height:1.6;margin:6px 0 0}
+.sheet .row{display:flex;gap:8px;margin-top:18px}
+.sheet .row button{flex:1;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:700;cursor:pointer}
+.save{background:var(--sea);color:#fff}.cancel{background:#eee;color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>가까이 제주<small>내 주변 찾기</small></h1>
+    <button class="iconbtn" id="btnSet" title="설정">⚙</button>
+  </div>
+  <div class="loc">📍 <span id="locLabel">위치 찾는 중…</span><button id="btnLoc">위치 갱신</button></div>
+  <nav id="tabs">
+    <button data-tab="transit">🚌 대중교통</button>
+    <button data-tab="food" class="on">🍜 음식&amp;카페</button>
+    <button data-tab="spot">📸 명소</button>
+    <button data-tab="life">🏪 생활편의</button>
+  </nav>
+</header>
+
+<main>
+  <div class="search">
+    <input id="q" type="search" enterkeyhint="search" autocomplete="off">
+    <button id="btnGo">검색</button>
+  </div>
+  <div id="seg"></div>
+  <div class="chips" id="chips"></div>
+  <div id="setup"></div>
+  <div id="map"></div>
+  <div id="results"></div>
+  <footer>장소 정보: 카카오 로컬 · 버스 경로: ODsay</footer>
+</main>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h2>API 키 설정</h2>
+    <p>테스트용으로 이 브라우저에만 저장돼요. 다른 사람과 공유할 땐 index.html 맨 위 CONFIG에 키를 적어 올려 주세요.</p>
+    <label>카카오 JavaScript 키 (장소 검색·지도)</label>
+    <input id="kKakao" placeholder="예) 1a2b3c…">
+    <p>developers.kakao.com → 내 애플리케이션 → 앱 키의 JavaScript 키. 플랫폼 &gt; Web에 사이트 주소(예: https://jejumong.github.io)를 등록하고, 카카오맵 사용 설정을 켜 주세요.</p>
+    <label>ODsay Web 키 (버스 정류장·번호)</label>
+    <input id="kOdsay" placeholder="예) AbCd…">
+    <p>lab.odsay.com → 애플리케이션 등록 → Web 키 발급. 사용할 URI에 같은 사이트 주소를 등록해 주세요.</p>
+    <div class="row"><button class="cancel" id="btnCancel">닫기</button><button class="save" id="btnSave">저장 후 새로고침</button></div>
+  </div>
+</div>
+
+<script>
+/* ===== 여기에 키를 넣으면 누구나 바로 쓸 수 있어요 ===== */
+const CONFIG = {
+  KAKAO_JS_KEY: 'e8daa949540834b55af58b73b1a279ef',   // 카카오 JavaScript 키
+  ODSAY_API_KEY: 'pshQOPjTqtKhMAvl7+eZ/Q'             // ODsay Web 키
+};
+/* 내가 '맛집'으로 등록한 가게 이름 — 검색 결과에서 ⭐추천으로 맨 위에 보여요 */
+const MY_PICKS = [
+  // '자매국수', '올래국수',
+];
+const DEFAULT_POS = { lat: 33.4996, lng: 126.5312 }; // 위치를 못 받으면 제주시청 기준
+
+const TABS = {
+  transit: { ph: '어디로 갈까요? 예) 제주공항', chips: [
+    {label:'제주국제공항'},{label:'제주버스터미널'},{label:'동문시장'},{label:'성산일출봉'},{label:'중문관광단지'},{label:'🚏 가까운 정류장', special:'stops'} ]},
+  food: { ph: '무엇을 먹을까요? 예) 고기국수', chips: [
+    {label:'고기국수'},{label:'흑돼지'},{label:'해장국'},{label:'회'},{label:'카페'},{label:'빵집'} ]},
+  spot: { ph: '명소 검색 예) 오름, 해수욕장', chips: [
+    {label:'📍 주변 명소', cat:'AT4'},{label:'오름'},{label:'해수욕장'},{label:'박물관'},{label:'올레길'} ]},
+  life: { ph: '편의시설 검색 예) 다이소', chips: [
+    {label:'편의점',cat:'CS2'},{label:'약국',cat:'PM9'},{label:'병원',cat:'HP8'},{label:'마트',cat:'MT1'},{label:'주유소',cat:'OL7'},{label:'주차장',cat:'PK6'},{label:'은행',cat:'BK9'} ]}
+};
+
+const S = { tab:'food', me:null, kakao:false, ps:null, map:null, overlays:[], foodFilter:'all', cands:[], authFail:false };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDist = m => { m = Number(m)||0; return m < 1000 ? `${m}m` : `${(m/1000).toFixed(1)}km`; };
+const getKey = k => { try { return localStorage.getItem(k) || CONFIG[k]; } catch(e) { return CONFIG[k]; } };
+const isPick = name => MY_PICKS.some(n => name.replace(/\s/g,'').includes(n.replace(/\s/g,'')));
+const loading = msg => $('#results').innerHTML = `<div class="loading">${esc(msg)}</div>`;
+const empty = msg => $('#results').innerHTML = `<div class="empty">${msg}</div>`;
+
+/* ---------- 카카오 SDK ---------- */
+function loadKakao(){
+  return new Promise((res, rej) => {
+    const key = getKey('KAKAO_JS_KEY');
+    if (!key) return rej('nokey');
+    const s = document.createElement('script');
+    s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&libraries=services&autoload=false`;
+    s.onload = () => { try { kakao.maps.load(res); } catch(e) { rej('load'); } };
+    s.onerror = () => rej('load');
+    document.head.appendChild(s);
+  });
+}
+function baseOpts(extra){
+  return Object.assign({ location: new kakao.maps.LatLng(S.me.lat, S.me.lng), radius: 20000, sort: kakao.maps.services.SortBy.DISTANCE }, extra||{});
+}
+function handleStatus(data, st){
+  if (st === kakao.maps.services.Status.OK) return data;
+  if (st === kakao.maps.services.Status.ERROR) S.authFail = true;
+  return [];
+}
+const kw  = (q, o)    => new Promise(r => S.ps.keywordSearch(q, (d, st) => r(handleStatus(d, st)), baseOpts(o)));
+const cat = (code, o) => new Promise(r => S.ps.categorySearch(code, (d, st) => r(handleStatus(d, st)), baseOpts(o)));
+
+/* ---------- 위치 ---------- */
+function locate(){
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(
+      p => res({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => res(null),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  });
+}
+async function refreshLocation(){
+  $('#locLabel').textContent = '위치 찾는 중…';
+  const pos = await locate();
+  S.me = pos || { ...DEFAULT_POS };
+  if (!pos) { $('#locLabel').textContent = '위치 권한이 없어 제주시청 기준으로 찾아요'; return; }
+  $('#locLabel').textContent = '현재 위치';
+  if (S.kakao) {
+    new kakao.maps.services.Geocoder().coord2RegionCode(S.me.lng, S.me.lat, (r, st) => {
+      if (st !== kakao.maps.services.Status.OK) return;
+      const h = r.find(x => x.region_type === 'H') || r[0];
+      $('#locLabel').textContent = `${h.region_2depth_name} ${h.region_3depth_name} 근처`;
+    });
+  }
+}
+
+/* ---------- 지도 ---------- */
+function drawPoints(points){
+  if (!S.kakao || !points.length) return;
+  const el = $('#map'); el.style.display = 'block';
+  if (!S.map) S.map = new kakao.maps.Map(el, { center: new kakao.maps.LatLng(S.me.lat, S.me.lng), level: 5 });
+  else S.map.relayout();
+  S.overlays.forEach(o => o.setMap(null)); S.overlays = [];
+  const bounds = new kakao.maps.LatLngBounds();
+  const add = (lat, lng, html, y) => {
+    const pos = new kakao.maps.LatLng(lat, lng);
+    const ov = new kakao.maps.CustomOverlay({ position: pos, content: html, yAnchor: y });
+    ov.setMap(S.map); S.overlays.push(ov); bounds.extend(pos);
+  };
+  add(S.me.lat, S.me.lng, '<div class="me"></div>', 0.5);
+  points.forEach(p => add(p.lat, p.lng, `<div class="mk ${p.kind||''}">${esc(p.label)}</div>`, 1.2));
+  S.map.setBounds(bounds, 40, 40, 40, 40);
+}
+function hideMap(){ $('#map').style.display = 'none'; }
+
+/* ---------- 장소 카드 ---------- */
+function routeLink(name, lat, lng){
+  return `https://map.kakao.com/link/from/${encodeURIComponent('내 위치')},${S.me.lat},${S.me.lng}/to/${encodeURIComponent(name.replace(/,/g,' '))},${lat},${lng}`;
+}
+function renderPlaces(list, title){
+  if (!list.length) {
+    hideMap();
+    return empty(S.authFail ? '카카오 키 또는 사이트 주소 등록을 확인해 주세요.' : '주변 20km 안에서 찾지 못했어요.<br>다른 말로 검색해 보세요.');
+  }
+  $('#results').innerHTML = `<div class="rhead">${esc(title)} · 가까운 순 ${list.length}곳</div>` + list.map((p, i) => {
+    const c = (p.category_name || '').split('>').pop().trim();
+    return `<div class="card">
+      <div class="prow" data-i="${i}"><span class="num">${i+1}</span><div class="pmain">
+        <div class="pname">${isPick(p.place_name) ? '<span class="pick">⭐ 추천</span>' : ''}${esc(p.place_name)}</div>
+        <div class="pmeta">${esc(c)} · <b>${fmtDist(p.distance)}</b></div>
+        <div class="paddr">${esc(p.road_address_name || p.address_name)}</div></div></div>
+      <div class="pbtns">
+        ${p.phone ? `<a href="tel:${esc(p.phone)}">📞 전화</a>` : ''}
+        <a target="_blank" rel="noopener" href="${routeLink(p.place_name, p.y, p.x)}">🧭 길찾기</a>
+        <a target="_blank" rel="noopener" href="${esc(p.place_url)}">상세 보기</a>
+      </div></div>`;
+  }).join('');
+  S.list = list;
+  drawPoints(list.map((p, i) => ({ lat: +p.y, lng: +p.x, label: i+1 })));
+}
+function sortPlaces(arr){
+  const seen = new Set();
+  return arr.filter(p => !seen.has(p.id) && seen.add(p.id))
+    .sort((a, b) => (isPick(b.place_name) - isPick(a.place_name)) || (a.distance - b.distance));
+}
+
+/* ---------- 탭별 검색 ---------- */
+async function foodSearch(q){
+  if (!q) return;
+  loading('가까운 곳 찾는 중…');
+  const cats = S.foodFilter === 'all' ? ['FD6', 'CE7'] : [S.foodFilter];
+  let res = (await Promise.all(cats.map(c => kw(q, { category_group_code: c })))).flat();
+  if (!res.length) res = await kw(q);
+  renderPlaces(sortPlaces(res), `'${q}'`);
+}
+async function spotSearch(q, o){
+  loading('주변 명소 찾는 중…');
+  if (o.cat || !q) return renderPlaces(sortPlaces(await cat('AT4')), '주변 관광명소');
+  renderPlaces(sortPlaces(await kw(q)), `'${q}'`);
+}
+async function lifeSearch(q, o){
+  loading('가까운 곳 찾는 중…');
+  if (o.cat) return renderPlaces(sortPlaces(await cat(o.cat, { radius: 5000 })), o.label);
+  if (q) renderPlaces(sortPlaces(await kw(q)), `'${q}'`);
+}
+async function nearStops(){
+  loading('가까운 정류장 찾는 중…');
+  const res = await kw('버스정류장', { radius: 1500 });
+  renderPlaces(sortPlaces(res), '가까운 버스정류장 (상세 보기에서 도착 정보 확인)');
+}
+
+/* ---------- 대중교통 ---------- */
+async function transitSearch(q, o){
+  if (o.special === 'stops') return nearStops();
+  if (!q) return;
+  loading('목적지 찾는 중…');
+  const c = await kw(q, { sort: kakao.maps.services.SortBy.ACCURACY });
+  if (!c.length) { hideMap(); return empty(S.authFail ? '카카오 키 또는 사이트 주소 등록을 확인해 주세요.' : `'${esc(q)}'를 찾지 못했어요.`); }
+  S.cands = c.slice(0, 5);
+  routeTo(0);
+}
+async function routeTo(idx){
+  const d = S.cands[idx];
+  const candHtml = S.cands.length > 1 ? `<div class="cands">혹시 다른 곳인가요?<br>${S.cands.map((c, i) =>
+    `<button class="chip ${i === idx ? 'on' : ''}" data-cand="${i}">${esc(c.place_name)}</button>`).join('')}</div>` : '';
+  $('#results').innerHTML = candHtml + `<div class="card"><div class="dlabel">도착</div>
+    <div class="pname">${esc(d.place_name)}</div><div class="paddr">${esc(d.road_address_name || d.address_name)} · 직선 ${fmtDist(d.distance)}</div>
+    <div class="pbtns"><a target="_blank" rel="noopener" href="${routeLink(d.place_name, d.y, d.x)}">🧭 카카오맵 길찾기</a></div></div>
+    <div id="routes"><div class="loading">버스 경로 찾는 중…</div></div>`;
+  drawPoints([{ lat: +d.y, lng: +d.x, label: '도착', kind: 'dest' }]);
+
+  const key = getKey('ODSAY_API_KEY');
+  if (!key) { $('#routes').innerHTML = `<div class="notice">ODsay 키가 아직 없어서 버스 번호는 여기서 못 보여드려요. 위의 <b>카카오맵 길찾기</b>를 눌러 주세요.</div>`; return; }
+  try {
+    const url = `https://api.odsay.com/v1/api/searchPubTransPathT?lang=0&SX=${S.me.lng}&SY=${S.me.lat}&EX=${d.x}&EY=${d.y}&apiKey=${encodeURIComponent(key)}`;
+    const j = await (await fetch(url)).json();
+    let err = j.error; if (Array.isArray(err)) err = err[0];
+    if (err) {
+      const code = String(err.code);
+      const msg = code === '-98' ? '가까워서 걸어가는 게 더 빨라요 (700m 이내).'
+                : code === '-99' ? '버스 경로를 찾지 못했어요. 카카오맵 길찾기를 이용해 주세요.'
+                : `버스 경로를 불러오지 못했어요 (${esc(err.message || err.msg || code)}). ODsay 키와 등록한 사이트 주소를 확인해 주세요.`;
+      $('#routes').innerHTML = `<div class="notice">${msg}</div>`; return;
+    }
+    const paths = (j.result && j.result.path) || [];
+    if (!paths.length) { $('#routes').innerHTML = `<div class="notice">버스 경로를 찾지 못했어요.</div>`; return; }
+    $('#routes').innerHTML = `<div class="rhead">버스 경로 ${Math.min(paths.length, 5)}가지</div>` + paths.slice(0, 5).map(pathCard).join('');
+    const first = paths[0].subPath.find(s => s.trafficType !== 3);
+    const pts = [{ lat: +d.y, lng: +d.x, label: '도착', kind: 'dest' }];
+    if (first) pts.unshift({ lat: +first.startY, lng: +first.startX, label: '🚏 ' + first.startName, kind: 'stop' });
+    drawPoints(pts);
+  } catch (e) {
+    $('#routes').innerHTML = `<div class="notice">버스 경로를 불러오지 못했어요. 인터넷 연결이나 ODsay 키를 확인해 주세요.</div>`;
+  }
+}
+function pathCard(p, i){
+  const info = p.info, subs = p.subPath;
+  const rides = subs.filter(s => s.trafficType !== 3);
+  const first = rides[0], walk0 = subs[0] && subs[0].trafficType === 3 ? subs[0] : null;
+  const lineName = s => s.trafficType === 2 ? s.lane.map(l => l.busNo).join(', ') + '번' : (s.lane[0] && s.lane[0].name) || '';
+  const sum = first ? `${walk0 && walk0.distance ? `걸어서 ${walk0.sectionTime}분(${walk0.distance}m) → ` : ''}<b>${esc(first.startName)}</b> 정류장에서 <b>${esc(lineName(first))}</b> 타기` : '';
+  const steps = subs.map(s => {
+    if (s.trafficType === 3) return s.distance ? `<li>🚶 도보 ${s.sectionTime}분 <span class="s">${s.distance}m</span></li>` : '';
+    const badges = s.trafficType === 2 ? s.lane.map(l => `<span class="bus">${esc(l.busNo)}</span>`).join('') : `<span class="bus">${esc(lineName(s))}</span>`;
+    return `<li class="ride"><div>${badges}</div>🚏 <b>${esc(s.startName)}</b> 승차<br>→ <b>${esc(s.endName)}</b> 하차 <span class="s">${s.stationCount}정거장 · ${s.sectionTime}분</span></li>`;
+  }).join('');
+  return `<div class="card route"><div class="rtop"><span class="time">${info.totalTime}분</span>
+    ${i === 0 ? '<span class="best">추천</span>' : ''}
+    <span class="rinfo">${(info.payment || 0).toLocaleString()}원 · ${rides.length > 1 ? `환승 ${rides.length - 1}회` : '환승 없음'} · 도보 ${fmtDist(info.totalWalk)}</span></div>
+    ${sum ? `<div class="sum">${sum}</div>` : ''}<ol>${steps}<li>🏁 도착</li></ol></div>`;
+}
+
+/* ---------- 화면 ---------- */
+function renderTab(){
+  const t = TABS[S.tab];
+  $('#q').placeholder = t.ph; $('#q').value = '';
+  $('#chips').innerHTML = t.chips.map((c, i) => `<button class="chip" data-chip="${i}">${esc(c.label)}</button>`).join('');
+  $('#seg').innerHTML = S.tab === 'food' ? `<div class="seg">${[['all','전체'],['FD6','음식점'],['CE7','카페']].map(([v, l]) =>
+    `<button data-f="${v}" class="${S.foodFilter === v ? 'on' : ''}">${l}</button>`).join('')}</div>` : '';
+  hideMap();
+  empty({ transit: '목적지를 검색하면<br>타야 할 정류장과 버스 번호를 알려드려요.',
+          food: '먹고 싶은 메뉴를 검색하면<br>내 위치에서 가까운 순으로 보여드려요.',
+          spot: '주변 명소를 둘러보세요.',
+          life: '필요한 곳을 눌러 보세요.' }[S.tab]);
+}
+function runSearch(q, o = {}){
+  q = (q || '').trim();
+  if (!S.kakao) { if (q) window.open('https://map.kakao.com/?q=' + encodeURIComponent(q), '_blank'); return; }
+  if (!S.me) return;
+  ({ transit: transitSearch, food: foodSearch, spot: spotSearch, life: lifeSearch })[S.tab](q, o);
+}
+
+$('#tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return;
+  S.tab = b.dataset.tab; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b)); renderTab(); };
+$('#chips').onclick = e => { const b = e.target.closest('[data-chip]'); if (!b) return;
+  const c = TABS[S.tab].chips[b.dataset.chip];
+  if (!c.cat && !c.special) $('#q').value = c.label;
+  runSearch(c.cat || c.special ? '' : c.label, c); };
+$('#seg').onclick = e => { const b = e.target.closest('[data-f]'); if (!b) return;
+  S.foodFilter = b.dataset.f; renderTab_seg(); if ($('#q').value.trim()) runSearch($('#q').value); };
+function renderTab_seg(){ document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('on', x.dataset.f === S.foodFilter)); }
+$('#btnGo').onclick = () => runSearch($('#q').value);
+$('#q').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('#q').blur(); runSearch($('#q').value); } };
+$('#results').onclick = e => {
+  const c = e.target.closest('[data-cand]'); if (c) return routeTo(+c.dataset.cand);
+  const r = e.target.closest('.prow'); if (r && S.map && S.list) { const p = S.list[r.dataset.i];
+    S.map.setLevel(3); S.map.panTo(new kakao.maps.LatLng(p.y, p.x)); $('#map').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+};
+$('#btnLoc').onclick = refreshLocation;
+$('#btnSet').onclick = () => { $('#kKakao').value = getKey('KAKAO_JS_KEY') || ''; $('#kOdsay').value = getKey('ODSAY_API_KEY') || ''; $('#modal').classList.add('on'); };
+$('#btnCancel').onclick = () => $('#modal').classList.remove('on');
+$('#btnSave').onclick = () => { try {
+  localStorage.setItem('KAKAO_JS_KEY', $('#kKakao').value.trim()); localStorage.setItem('ODSAY_API_KEY', $('#kOdsay').value.trim()); } catch(e) {}
+  location.reload(); };
+
+(async function init(){
+  renderTab();
+  try { await loadKakao(); S.kakao = true; S.ps = new kakao.maps.services.Places(); }
+  catch (e) {
+    $('#setup').innerHTML = `<div class="notice">아직 카카오 키가 없어서, 검색하면 <b>카카오맵</b>으로 연결돼요.<br>키를 넣으면 이 화면에서 바로 가까운 곳과 버스 번호가 나와요.<br><button onclick="document.getElementById('btnSet').click()">⚙ 키 넣기</button></div>`;
+  }
+  await refreshLocation();
+})();
+</script>
+</body>
+</html>
