@@ -98,6 +98,8 @@ main{padding-top:16px;padding-bottom:48px}
 .cmain b{font-size:15px}
 .cmain span{font-size:12.5px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cdist{flex:none;font-size:12.5px;color:var(--sea);font-weight:700}
+.more{display:block;width:100%;margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;font-size:14px;font-weight:700;color:var(--sea);cursor:pointer}
+.more span{color:var(--mute);font-weight:500}
 .klink{font-size:13px;color:var(--sea);font-weight:600;text-decoration:none}
 .dest .dlabel{font-size:12px;color:var(--tang);font-weight:700;margin-bottom:2px}
 .dest .paddr{white-space:normal}
@@ -220,25 +222,48 @@ function handleStatus(d, st){
   if (st === kakao.maps.services.Status.ERROR) S.authFail = true;
   return [];
 }
-/* 반경 안에서 가까운 순으로 최대 45곳(카카오 한도: 15곳씩 3쪽)을 모아요.
-   카카오 반경 옵션은 20km까지라, 그보다 넓으면 반경 없이 가까운 순으로 받은 뒤 거리로 걸러요. */
+/* 카카오 검색은 한 번에 최대 45곳(15곳 × 3쪽)만 줘요.
+   그래서 범위를 네모 구역으로 덮고, 한 구역에 45곳이 넘으면 4등분해서 다시 찾는 식으로 모두 모아요. */
+const MAX_REQ = 120; // 검색 한 번에 쓰는 카카오 요청 상한
 function collect(fn, arg, extra, R){
-  return new Promise(res => {
-    const out = [];
-    const opts = Object.assign({ location: new kakao.maps.LatLng(S.me.lat, S.me.lng), sort: kakao.maps.services.SortBy.DISTANCE },
-      R <= 20000 ? { radius: R } : {}, extra || {});
-    S.ps[fn](arg, (d, st, pg) => {
-      out.push(...handleStatus(d, st));
-      if (st === kakao.maps.services.Status.OK && pg && pg.hasNextPage && pg.current < 3) return pg.nextPage();
-      res(out.filter(p => +p.distance <= R));
-    }, opts);
+  const { lat, lng } = S.me, cos = Math.cos(lat * Math.PI / 180);
+  const dLat = R / 111320, dLng = R / (111320 * cos);
+  const found = new Map(); let req = 0;
+  const call = (b, page) => new Promise(res => {
+    req++;
+    const opts = Object.assign({
+      location: new kakao.maps.LatLng(lat, lng), sort: kakao.maps.services.SortBy.DISTANCE, page,
+      bounds: new kakao.maps.LatLngBounds(new kakao.maps.LatLng(b.s, b.w), new kakao.maps.LatLng(b.n, b.e))
+    }, extra || {});
+    S.ps[fn](arg, (d, st, pg) => res({ d: handleStatus(d, st), total: pg ? pg.totalCount : 0 }), opts);
   });
+  const add = list => list.forEach(p => { if (+p.distance <= R) found.set(p.id, p); });
+  const farFromMe = b => { // 구역에서 내 위치와 가장 가까운 점까지의 거리
+    const y = Math.min(Math.max(lat, b.s), b.n), x = Math.min(Math.max(lng, b.w), b.e);
+    return Math.hypot((y - lat) * 111320, (x - lng) * 111320 * cos) > R;
+  };
+  async function area(b, depth){
+    if (farFromMe(b) || req >= MAX_REQ || S.authFail) return;
+    const first = await call(b, 1);
+    const km = (b.n - b.s) * 111.32;
+    if (first.total > 45 && depth < 7 && km > 1 && req + 4 <= MAX_REQ) {
+      const mLat = (b.n + b.s) / 2, mLng = (b.e + b.w) / 2;
+      await Promise.all([
+        { s: b.s, n: mLat, w: b.w, e: mLng }, { s: b.s, n: mLat, w: mLng, e: b.e },
+        { s: mLat, n: b.n, w: b.w, e: mLng }, { s: mLat, n: b.n, w: mLng, e: b.e }
+      ].map(c => area(c, depth + 1)));
+      return;
+    }
+    if (first.total > 45) S.partial = true;
+    add(first.d);
+    const pages = Math.min(3, Math.ceil(Math.min(first.total, 45) / 15));
+    const rest = await Promise.all([2, 3].slice(0, Math.max(0, pages - 1)).map(p => call(b, p)));
+    rest.forEach(r => add(r.d));
+  }
+  return area({ s: lat - dLat, n: lat + dLat, w: lng - dLng, e: lng + dLng }, 0).then(() => [...found.values()]);
 }
 const kwR  = (q, extra, R = S.radius) => collect('keywordSearch', q, extra, R);
-/* 업종 검색: 20km 이하는 업종 검색, 그보다 넓으면 업종 이름으로 키워드 검색 */
-const catR = (code, label, R = S.radius) => R <= 20000
-  ? collect('categorySearch', code, null, R)
-  : collect('keywordSearch', label, { category_group_code: code }, R);
+const catR = (code, label, R = S.radius) => collect('categorySearch', code, null, R);
 
 /* ---------- 위치 ---------- */
 function locate(){
@@ -292,8 +317,24 @@ function routeLink(name, lat, lng){
 }
 function renderPlaces(list, title, R = S.radius){
   if (!list.length) { hideMap(); return empty(S.authFail ? failMsg : `내 주변 ${fmtDist(R)} 안에서 찾지 못했어요.<br>${R < 70000 ? '범위를 넓히거나 ' : ''}다른 말로 검색해 보세요.`); }
-  S.list = list;
-  $('#results').innerHTML = `<div class="rhead"><b>${esc(title)}</b><span>${fmtDist(R)} 안 · 가까운 순 ${list.length}곳</span></div>` + list.map((p, i) => {
+  S.list = list; S.shown = Math.min(PAGE, list.length);
+  $('#results').innerHTML = `<div class="rhead"><b>${esc(title)}</b><span>${fmtDist(R)} 안 · 가까운 순 ${list.length}곳</span></div>`
+    + (S.partial ? `<div class="notice">가게가 너무 많아 일부만 보여요. 범위를 좁히면 더 정확해요.</div>` : '')
+    + `<div id="plist">${list.slice(0, S.shown).map(placeCard).join('')}</div><div id="morebox"></div>`;
+  renderMore();
+}
+const PAGE = 30;
+function renderMore(){
+  const left = S.list.length - S.shown;
+  $('#morebox').innerHTML = left > 0 ? `<button class="more" id="btnMore">${Math.min(PAGE, left)}곳 더 보기 <span>(남은 ${left}곳)</span></button>` : '';
+  drawPoints(S.list.slice(0, S.shown).map((p, i) => ({ lat: +p.y, lng: +p.x, label: i+1 })));
+}
+function showMore(){
+  const from = S.shown; S.shown = Math.min(S.shown + PAGE, S.list.length);
+  $('#plist').insertAdjacentHTML('beforeend', S.list.slice(from, S.shown).map((p, k) => placeCard(p, from + k)).join(''));
+  renderMore();
+}
+function placeCard(p, i){
     const c = (p.category_name || '').split('>').pop().trim();
     return `<div class="card">
       <div class="prow" data-i="${i}"><span class="num">${i+1}</span><div class="pmain">
@@ -305,8 +346,6 @@ function renderPlaces(list, title, R = S.radius){
         ${p.phone ? `<a href="tel:${esc(p.phone)}">${ic('phone')}전화</a>` : ''}
         <a target="_blank" rel="noopener" href="${esc(p.place_url)}">${ic('info')}상세</a>
       </div></div>`;
-  }).join('');
-  drawPoints(list.map((p, i) => ({ lat: +p.y, lng: +p.x, label: i+1 })));
 }
 function sortPlaces(arr){
   const seen = new Set();
@@ -428,7 +467,7 @@ function runSearch(q, o = {}){
   q = (q || '').trim();
   if (!S.kakao) { if (q) window.open('https://map.kakao.com/?q=' + encodeURIComponent(q), '_blank'); return; }
   if (!S.me) return;
-  S.last = { q, o };
+  S.last = { q, o }; S.partial = false; S.authFail = false;
   ({ transit: transitSearch, food: foodSearch, spot: spotSearch, life: lifeSearch })[S.tab](q, o);
 }
 
@@ -447,6 +486,7 @@ const submit = () => { document.querySelectorAll('#chips .chip').forEach(x => x.
 $('#btnGo').onclick = submit;
 $('#q').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } };
 $('#results').onclick = e => {
+  if (e.target.closest('#btnMore')) return showMore();
   const c = e.target.closest('[data-cand]'); if (c) return routeTo(+c.dataset.cand);
   const r = e.target.closest('.prow'); if (r && S.map && S.list) { const p = S.list[r.dataset.i];
     S.map.setLevel(3); S.map.panTo(new kakao.maps.LatLng(p.y, p.x)); $('#map').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
