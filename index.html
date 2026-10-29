@@ -384,6 +384,9 @@ $('#btnSave').onclick = () => { try {
   renderTab();
   try { await loadKakao(); S.kakao = true; S.ps = new kakao.maps.services.Places(); }
   catch (e) {
+    if (e === 'load') {
+      $('#setup').innerHTML = `<div class="notice"><b>카카오 키는 들어 있는데, 카카오가 이 주소에서의 사용을 막고 있어요.</b><br>카카오디벨로퍼스에서 ① 플랫폼 키 → JavaScript 키 → JavaScript SDK 도메인에 <b>${esc(location.origin)}</b> 등록 ② 제품 설정 → 카카오맵 사용 설정 ON 을 확인해 주세요. 설정 후 몇 분 뒤 새로고침하면 돼요.</div>`;
+    } else
     $('#setup').innerHTML = `<div class="notice">아직 카카오 키가 없어서, 검색하면 <b>카카오맵</b>으로 연결돼요.<br>키를 넣으면 이 화면에서 바로 가까운 곳과 버스 번호가 나와요.<br><button onclick="document.getElementById('btnSet').click()">⚙ 키 넣기</button></div>`;
   }
   await refreshLocation();
